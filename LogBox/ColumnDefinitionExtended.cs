@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -30,15 +26,13 @@ namespace LogBox
             VisibleProperty = DependencyProperty.Register("Visible",
                 typeof(Boolean),
                 typeof(ColumnDefinitionExtended),
-                new PropertyMetadata(true, new PropertyChangedCallback(OnVisibleChanged)));
+                new PropertyMetadata(true, OnVisibleChanged));
 
-            ColumnDefinition.WidthProperty.OverrideMetadata(typeof(ColumnDefinitionExtended),
-                new FrameworkPropertyMetadata(new GridLength(1, GridUnitType.Star), null,
-                    new CoerceValueCallback(CoerceWidth)));
+            WidthProperty.OverrideMetadata(typeof(ColumnDefinitionExtended),
+                new FrameworkPropertyMetadata(new GridLength(1, GridUnitType.Star), null, CoerceWidth));
 
-            ColumnDefinition.MinWidthProperty.OverrideMetadata(typeof(ColumnDefinitionExtended),
-                new FrameworkPropertyMetadata((Double)0, null,
-                    new CoerceValueCallback(CoerceMinWidth)));
+            MinWidthProperty.OverrideMetadata(typeof(ColumnDefinitionExtended),
+                new FrameworkPropertyMetadata((Double)0, null, CoerceMinWidth));
         }
 
         // Get/Set

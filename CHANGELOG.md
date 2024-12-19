@@ -2,6 +2,12 @@
 
 ## [%version%] - %date%
 
+## [v3.0.0] - 18.12.2024 15:00
+
+- Upgrade prject to .net80
+- Updated MahApps.Metro to v2.4.10 and MahApps.Metro.IconPacks to v5.1.0
+- Include MahApps Resource Dictionary into the UserControl for simpler use inside project without using MahApps Styles
+- little CleanUp Code
 
 ## [v2.2.0] - 23.06.2020 22:36
 

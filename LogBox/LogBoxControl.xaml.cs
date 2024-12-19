@@ -9,12 +9,10 @@ using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using System.Collections.ObjectModel;
 using System.Drawing;
 using System.ComponentModel;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using LogBox.LogEvents;
@@ -45,7 +43,7 @@ namespace LogBox
         /// <summary>
         /// List with all log events
         /// </summary>
-        public ObservableCollection<LogEvent> LogEvents { get; private set; }
+        public ObservableCollection<LogEvent> LogEvents { get; }
 
         private LogEvent _selectedLogEvent;
         /// <summary>
@@ -211,7 +209,7 @@ namespace LogBox
 
         //***********************************************************************************************************************************************************************************************************
 
-        private int _numSaveOperations = 0;
+        private int _numSaveOperations;
         /// <summary>
         /// Number of currently running save operations
         /// </summary>
@@ -248,7 +246,7 @@ namespace LogBox
 
             listView_Log.ItemsSource = LogEvents;
             CollectionView view = (CollectionView)CollectionViewSource.GetDefaultView(LogEvents);
-            view.Filter = filterListViewItems;
+            view.Filter = FilterListViewItems;
 
             // see: https://social.msdn.microsoft.com/Forums/vstudio/en-US/62482ae9-ddd0-4c89-b872-a80c7c367385/setting-scroll-scrollchanged-and-valuechanged-listview-event-handlers-programatically?forum=wpf
             listView_Log.AddHandler(ScrollViewer.ScrollChangedEvent, new RoutedEventHandler(ListView_ScrollChanged));
@@ -260,7 +258,7 @@ namespace LogBox
             EnableImageLogs = false;
             AutoScrollToLastLogEntry = true;
 
-            _lastLogPath = System.AppDomain.CurrentDomain.BaseDirectory + "logFile.log";
+            _lastLogPath = AppDomain.CurrentDomain.BaseDirectory + "logFile.log";
         }
 
         //***********************************************************************************************************************************************************************************************************
@@ -275,7 +273,7 @@ namespace LogBox
             {
                 if (_clearLogCommand == null)
                 {
-                    _clearLogCommand = new RelayCommand(param => ClearLog());
+                    _clearLogCommand = new RelayCommand(_ => ClearLog());
                 }
                 return _clearLogCommand;
             }
@@ -291,7 +289,7 @@ namespace LogBox
             {
                 if (_saveLogCommand == null)
                 {
-                    _saveLogCommand = new RelayCommand(param => SaveLog());
+                    _saveLogCommand = new RelayCommand(_ => SaveLog());
                 }
                 return _saveLogCommand;
             }
@@ -416,14 +414,14 @@ namespace LogBox
                {
                    foreach (LogEvent logEvent in logEvents)
                    {
-                       logString.Append(logEvent.LogTime.ToString() + " | " + String.Format("{0,-7}", logEvent.LogType.ToString()) + " | " + logEvent.LogMessage + Environment.NewLine);
+                       logString.Append(logEvent.LogTime.ToString(CultureInfo.InvariantCulture) + " | " + String.Format("{0,-7}", logEvent.LogType.ToString()) + " | " + logEvent.LogMessage + Environment.NewLine);
                    }
                    System.IO.File.WriteAllText(saveFileDialog.FileName, logString.ToString());
                });
                 _lastLogPath = saveFileDialog.FileName;
 
                 MetroWindow parentWindow = FindParent<MetroWindow>(this);
-                await parentWindow.ShowMessageAsync("Log saved", "Log was successfully saved to" + Environment.NewLine + "\"" + saveFileDialog.FileName + "\"", MessageDialogStyle.Affirmative);
+                await parentWindow.ShowMessageAsync("Log saved", "Log was successfully saved to" + Environment.NewLine + "\"" + saveFileDialog.FileName + "\"");
             }
 
             NumSaveOperations--;
@@ -436,11 +434,11 @@ namespace LogBox
         /// </summary>
         /// <param name="item">ListViewItem</param>
         /// <returns>Should the item be shown or not</returns>
-        private bool filterListViewItems(object item)
+        private bool FilterListViewItems(object item)
         {
             LogEvent log = (LogEvent)item;
-            bool logTypeVisible = (ShowInfos == true && log.LogType == LogTypes.INFO) || (ShowWarnings == true && log.LogType == LogTypes.WARNING) || (ShowErrors == true && log.LogType == LogTypes.ERROR) || (EnableImageLogs == true && ShowImageLogs == true && log.LogType == LogTypes.IMAGE);
-            bool logMessageVisible = (!IsSearchEnabled || string.IsNullOrEmpty(SearchText)) ? true : (log.LogMessage.ToLower().Contains(SearchText.ToLower()) || log.LogTime.ToString().ToLower().Contains(SearchText.ToLower()));
+            bool logTypeVisible = (ShowInfos && log.LogType == LogTypes.INFO) || (ShowWarnings && log.LogType == LogTypes.WARNING) || (ShowErrors && log.LogType == LogTypes.ERROR) || (EnableImageLogs && ShowImageLogs && log.LogType == LogTypes.IMAGE);
+            bool logMessageVisible = !IsSearchEnabled || string.IsNullOrEmpty(SearchText) || log.LogMessage.ToLower().Contains(SearchText.ToLower()) || log.LogTime.ToString(CultureInfo.InvariantCulture).ToLower().Contains(SearchText.ToLower());
             return logTypeVisible && logMessageVisible;
         }
 
@@ -481,7 +479,7 @@ namespace LogBox
                 for (int i = 0; i < VisualTreeHelper.GetChildrenCount(depObj); i++)
                 {
                     DependencyObject child = VisualTreeHelper.GetChild(depObj, i);
-                    if (child != null && child is T)
+                    if (child is T)
                     {
                         yield return (T)child;
                     }
@@ -513,7 +511,7 @@ namespace LogBox
             listView_Log.UpdateLayout();
             foreach (ListViewItem lvi in FindVisualChildren<ListViewItem>(listView_Log))
             {
-                if (!isScrolling || (isScrolling && (lvi.Tag == null || (bool)lvi.Tag == false)))       // if scrolling, only highlight new items (created by virtualization, Tag == null)
+                if (!isScrolling || (lvi.Tag == null || (bool)lvi.Tag == false))       // if scrolling, only highlight new items (created by virtualization, Tag == null)
                 {
                     HighlightText(lvi, IsSearchEnabled ? SearchText : "");
                     lvi.Tag = true;
@@ -559,13 +557,12 @@ namespace LogBox
                             tb.Inlines.Add(item);
                         }
                     }
-                    return;
                 }
                 else
                 {
-                    for (int i = 0; i < VisualTreeHelper.GetChildrenCount(itx as DependencyObject); i++)
+                    for (int i = 0; i < VisualTreeHelper.GetChildrenCount(itx); i++)
                     {
-                        HighlightText(VisualTreeHelper.GetChild(itx as DependencyObject, i), highlightText);
+                        HighlightText(VisualTreeHelper.GetChild(itx, i), highlightText);
                     }
                 }
             }

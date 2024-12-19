@@ -1,17 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace LogBox
 {
@@ -21,9 +12,9 @@ namespace LogBox
     // see: https://stackoverflow.com/questions/741956/pan-zoom-image
     public partial class ZoomBorder : Border
     {
-        private UIElement child = null;
-        private Point origin;
-        private Point start;
+        private UIElement _child;
+        private Point _origin;
+        private Point _start;
 
         private TranslateTransform GetTranslateTransform(UIElement element)
         {
@@ -40,43 +31,43 @@ namespace LogBox
             get { return base.Child; }
             set
             {
-                if (value != null && value != this.Child)
-                    this.Initialize(value);
+                if (value != null && value != Child)
+                    Initialize(value);
                 base.Child = value;
             }
         }
 
         public void Initialize(UIElement element)
         {
-            this.child = element;
-            if (child != null)
+            _child = element;
+            if (_child != null)
             {
                 TransformGroup group = new TransformGroup();
                 ScaleTransform st = new ScaleTransform();
                 group.Children.Add(st);
                 TranslateTransform tt = new TranslateTransform();
                 group.Children.Add(tt);
-                child.RenderTransform = group;
-                child.RenderTransformOrigin = new Point(0.0, 0.0);
-                this.MouseWheel += child_MouseWheel;
-                this.MouseLeftButtonDown += child_MouseLeftButtonDown;
-                this.MouseLeftButtonUp += child_MouseLeftButtonUp;
-                this.MouseMove += child_MouseMove;
-                this.PreviewMouseRightButtonDown += new MouseButtonEventHandler(child_PreviewMouseRightButtonDown);
+                _child.RenderTransform = group;
+                _child.RenderTransformOrigin = new Point(0.0, 0.0);
+                MouseWheel += child_MouseWheel;
+                MouseLeftButtonDown += child_MouseLeftButtonDown;
+                MouseLeftButtonUp += child_MouseLeftButtonUp;
+                MouseMove += child_MouseMove;
+                PreviewMouseRightButtonDown += child_PreviewMouseRightButtonDown;
             }
         }
 
         public void Reset()
         {
-            if (child != null)
+            if (_child != null)
             {
                 // reset zoom
-                var st = GetScaleTransform(child);
+                var st = GetScaleTransform(_child);
                 st.ScaleX = 1.0;
                 st.ScaleY = 1.0;
 
                 // reset pan
-                var tt = GetTranslateTransform(child);
+                var tt = GetTranslateTransform(_child);
                 tt.X = 0.0;
                 tt.Y = 0.0;
             }
@@ -86,21 +77,19 @@ namespace LogBox
 
         private void child_MouseWheel(object sender, MouseWheelEventArgs e)
         {
-            if (child != null)
+            if (_child != null)
             {
-                var st = GetScaleTransform(child);
-                var tt = GetTranslateTransform(child);
+                var st = GetScaleTransform(_child);
+                var tt = GetTranslateTransform(_child);
 
                 double zoom = e.Delta > 0 ? .2 : -.2;
                 if (!(e.Delta > 0) && (st.ScaleX < .4 || st.ScaleY < .4))
                     return;
 
-                Point relative = e.GetPosition(child);
-                double abosuluteX;
-                double abosuluteY;
+                Point relative = e.GetPosition(_child);
 
-                abosuluteX = relative.X * st.ScaleX + tt.X;
-                abosuluteY = relative.Y * st.ScaleY + tt.Y;
+                var abosuluteX = relative.X * st.ScaleX + tt.X;
+                var abosuluteY = relative.Y * st.ScaleY + tt.Y;
 
                 st.ScaleX += zoom;
                 st.ScaleY += zoom;
@@ -112,42 +101,38 @@ namespace LogBox
 
         private void child_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            if (child != null)
+            if (_child != null)
             {
-                var tt = GetTranslateTransform(child);
-                start = e.GetPosition(this);
-                origin = new Point(tt.X, tt.Y);
-                this.Cursor = Cursors.SizeAll;
-                child.CaptureMouse();
+                var tt = GetTranslateTransform(_child);
+                _start = e.GetPosition(this);
+                _origin = new Point(tt.X, tt.Y);
+                Cursor = Cursors.SizeAll;
+                _child.CaptureMouse();
             }
         }
 
         private void child_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            if (child != null)
+            if (_child != null)
             {
-                child.ReleaseMouseCapture();
-                this.Cursor = Cursors.Arrow;
+                _child.ReleaseMouseCapture();
+                Cursor = Cursors.Arrow;
             }
         }
 
         void child_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
         {
-            this.Reset();
+            Reset();
         }
 
         private void child_MouseMove(object sender, MouseEventArgs e)
         {
-            if (child != null)
-            {
-                if (child.IsMouseCaptured)
-                {
-                    var tt = GetTranslateTransform(child);
-                    Vector v = start - e.GetPosition(this);
-                    tt.X = origin.X - v.X;
-                    tt.Y = origin.Y - v.Y;
-                }
-            }
+            if (_child == null) return;
+            if (!_child.IsMouseCaptured) return;
+            var tt = GetTranslateTransform(_child);
+            Vector v = _start - e.GetPosition(this);
+            tt.X = _origin.X - v.X;
+            tt.Y = _origin.Y - v.Y;
         }
 
         #endregion

@@ -1,13 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Data;
 using System.Windows.Media;
 using MahApps.Metro.IconPacks;
-
-namespace LogBox
+#pragma warning disable CA1416
+namespace LogBox.Converters
 {
     /// <summary>
     /// Convert LogTypes enum values to GeometryDrawing representation of the LogType icon
@@ -17,12 +13,12 @@ namespace LogBox
     {
         public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
-            string iconDataStr = null;
-            Brush foregroundBrush = null;
-            Brush strokeBrush = null;
-            Brush backgroundRectBrush = null;
+            string iconDataStr;
+            Brush foregroundBrush;
+            Brush strokeBrush;
+            Brush backgroundRectBrush;
 
-            Geometry backgroundRectGeometry = null;
+            Geometry backgroundRectGeometry;
 
             switch ((LogTypes)value)
             {
@@ -73,3 +69,4 @@ namespace LogBox
         }
     }
 }
+#pragma warning restore CA1416
